@@ -2,12 +2,18 @@
 title: "Iris dataset"
 author: "Vinh Dang"
 date: "10/26/2016"
-output: html_document
+output: pdf_document
 ---
+
+```{r echo=FALSE}
+# Setup
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
 
 # Introduction
 
-Iris dataset probably is one of the most famous dataset. The dataset can be found [here](https://archive.ics.uci.edu/ml/datasets/Iris). However, the CSV format can be found [here](https://vincentarelbundock.github.io/Rdatasets/datasets.html)
+Iris dataset probably is one of the most famous dataset. The dataset can be found [here](https://archive.ics.uci.edu/ml/datasets/Iris). However, the CSV format can be found [here](https://vincentarelbundock.github.io/Rdatasets/datasets.html).
 
 # Getting started
 
@@ -21,4 +27,159 @@ Take a quick look
 
 ```{r}
 str(iris)
+```
+
+There are 150 lines, i.e. 150 instances in the dataset, 4 columns (4 features), and 3 classes.
+
+We might want to divide train/test dataset (or using cross-validation as later).
+
+```{r}
+require(caTools)
+# 75% for train and 25% for test
+sample = sample.split(iris$Species, SplitRatio = 0.75)
+train = subset(iris, sample == TRUE)
+test = subset(iris, sample == FALSE)
+```
+
+Test the division
+```{r}
+nrow (train)
+nrow(test)
+```
+
+Check for NA values
+
+```{r}
+  sum(is.na(df))
+```
+
+# Classification
+
+## Multinomial Logistic Regression
+
+```{r results='hide'}
+require(caret)
+# train
+train.multinom = train (Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width,
+                        data = train, method="multinom")
+```
+
+```{r}
+# predict with test data
+predict.multinom = predict(train.multinom, newdata = test)
+
+# check the result
+table.multinom = table (predict.multinom, test$Species)
+
+# full result
+table.multinom
+
+# accuracy
+sum(diag(table.multinom)) / sum (table.multinom)
+```
+
+Well, quite cool. The accuracy is 97%. How about other algorithms?
+
+## SVM
+
+```{r results='hide',warning=FALSE,message=FALSE}
+library (e1071)
+library (caret)
+train.svm = train (Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width,
+                        data = train, method="svmLinear")
+```
+
+```{r}
+# predict with test data
+predict.svm= predict(train.svm, newdata = test)
+
+# check the result
+table.svm = table (predict.svm, test$Species)
+
+# full result
+table.svm
+
+# accuracy
+sum(diag(table.svm)) / sum (table.svm)
+```
+
+Again, the accuracy score is 97.2%.
+
+## Decision tree
+
+```{r results='hide',warning=FALSE,message=FALSE}
+library (e1071)
+library (caret)
+train.rpart = train (Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width,
+                        data = train, method="rpart")
+```
+
+```{r}
+# predict with test data
+predict.rpart= predict(train.rpart, newdata = test)
+
+# check the result
+table.rpart = table (predict.rpart, test$Species)
+
+# full result
+table.rpart
+
+# accuracy
+sum(diag(table.rpart)) / sum (table.rpart)
+```
+
+Not very good this time. Only 91%.
+
+## Random forest
+
+Usually random forest provide very good classification results. How about this case?
+
+```{r results='hide',warning=FALSE}
+# we will use h2o for speeding up
+# not really need because the data is small
+library (h2o)
+h2o.init()
+
+train.rf = h2o.randomForest(y=6,x=2:5,training_frame = as.h2o(train),validation_frame = as.h2o(test),
+                            ntrees = 500)
+```
+
+```{r}
+print (train.rf)
+plot (train.rf)
+
+
+```
+
+Random Forest gave us the accuracy score of 100%. So impressive. How about if we use cross-validation?
+
+```{r results='hide',message=FALSE,warning=FALSE}
+train.rf = h2o.randomForest(y=6,x=2:5,training_frame = as.h2o(iris),
+                            ntrees = 500,
+                            nfolds=5)
+```
+
+```{r}
+print (train.rf)
+plot (train.rf)
+```
+
+How about if we increas number of tree?
+
+```{r results='hide',message=FALSE,warning=FALSE}
+train.rf = h2o.randomForest(y=6,x=2:5,training_frame = as.h2o(iris),
+                            ntrees = 2500,
+                            nfolds=5)
+```
+
+```{r}
+print (train.rf)
+plot (train.rf)
+```
+
+Not really help.
+
+Don't forget to shut down h2o.
+```{r results='hide'}
+h2o.shutdown(FALSE)
 ```
