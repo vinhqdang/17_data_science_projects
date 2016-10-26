@@ -1,0 +1,24 @@
+---
+title: "Iris dataset"
+author: "Vinh Dang"
+date: "10/26/2016"
+output: html_document
+---
+
+# Introduction
+
+Iris dataset probably is one of the most famous dataset. The dataset can be found [here](https://archive.ics.uci.edu/ml/datasets/Iris). However, the CSV format can be found [here](https://vincentarelbundock.github.io/Rdatasets/datasets.html)
+
+# Getting started
+
+Loading the dataset
+
+```{r}
+iris = read.csv("iris.csv")
+```
+
+Take a quick look
+
+```{r}
+str(iris)
+```
